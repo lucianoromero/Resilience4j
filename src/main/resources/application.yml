@@ -1,0 +1,51 @@
+management.endpoints.web.exposure.include: health,metrics
+management.endpoint.health.enabled: true
+management.endpoint.metrics.enabled: true
+management.health.circuitbreakers.enabled: true
+
+resilience4j.ratelimiter:
+    instances:
+        getMessageRateLimit:
+            limitForPeriod: 2
+            limitRefreshPeriod: 5s
+
+resilience4j.retry:
+    instances:
+        getInvoiceRetry:            
+            maxAttempts: 5
+            waitDuration: 2s
+            retryExceptions:
+                - org.springframework.web.client.HttpServerErrorException
+                - org.springframework.web.client.HttpClientErrorException
+                - java.io.IOException
+                - org.springframework.web.client.ResourceAccessException
+            # ignoreExceptions:
+            #     - io.github.robwin.exception.BusinessException
+
+resilience4j.circuitbreaker:
+    configs:
+        default:
+            registerHealthIndicator: true
+            allowHealthIndicatorToFail: false
+    instances:
+        getInvoiceCB:
+            failureRateThreshold: 80
+            slidingWindowSize: 10
+            slidingWindowType: COUNT_BASED
+            minimumNumberOfCalls: 5
+            automaticTransitionFromOpenToHalfOpenEnabled: true
+            permittedNumberOfCallsInHalfOpenState: 4                       
+            waitDurationInOpenState: 1s                                 
+            
+
+resilience4j.bulkhead:
+    instances:
+        getMessageBH:
+            maxWaitDuration: 0s
+            maxConcurrentCalls: 5
+
+resilience4j.timelimiter:
+    instances:
+        getMessageTL:
+            timeoutDuration: 1ms
+            cancelRunningFuture: false                        
